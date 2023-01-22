@@ -1,0 +1,33 @@
+from keras.layers import Input, Conv2D, UpSampling2D
+from keras.models import Model
+from keras.optimizers import Adam
+from keras.callbacks import ModelCheckpoint
+import numpy as np
+
+# Load the data
+X_train = np.load('X_train.npy')
+y_train = np.load('y_train.npy')
+X_val = np.load('X_val.npy')
+y_val = np.load('y_val.npy')
+
+# Create the model
+input_layer = Input(shape=(64, 64, 3))
+
+# Add the convolutional layers
+conv_layer1 = Conv2D(64, kernel_size=(3, 3), activation='relu', padding='same')(input_layer)
+upsample_layer1 = UpSampling2D(size=(2, 2))(conv_layer1)
+
+conv_layer2 = Conv2D(32, kernel_size=(3, 3), activation='relu', padding='same')(upsample_layer1)
+upsample_layer2 = UpSampling2D(size=(2, 2))(conv_layer2)
+
+conv_layer3 = Conv2D(3, kernel_size=(3, 3), activation='relu', padding='same')(upsample_layer2)
+
+# Compile the model
+model = Model(input_layer, conv_layer3)
+model.compile(optimizer=Adam(lr=0.001), loss='mean_squared_error')
+
+# Create the checkpointer
+checkpointer = ModelCheckpoint(filepath='model.h5', verbose=1, save_best_only=True)
+
+# Train the model
+model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=100, batch_size=32, callbacks=[checkpointer])
